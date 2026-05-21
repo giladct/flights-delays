@@ -1466,6 +1466,35 @@ function buildInsights(data) {
     }
   }
 
+  // Compare airports within same city (e.g. LTN vs LHR in London)
+  const byCityAirport = {};
+  withDelay.forEach(f => {
+    if (!f.dest_iata) return;
+    const city = CITY_GROUP[f.dest_iata];
+    if (!city) return;
+    if (!byCityAirport[city]) byCityAirport[city] = {};
+    if (!byCityAirport[city][f.dest_iata]) byCityAirport[city][f.dest_iata] = [];
+    byCityAirport[city][f.dest_iata].push(f.delay_minutes);
+  });
+  const cityInsights = [];
+  Object.entries(byCityAirport).forEach(([city, airports]) => {
+    const qualified = Object.entries(airports)
+      .filter(([, d]) => d.length >= 5)
+      .map(([iata, d]) => ({ iata, avg: Math.round(d.reduce((s, x) => s + x, 0) / d.length) }));
+    if (qualified.length < 2) return;
+    const best  = qualified.reduce((a, b) => a.avg < b.avg ? a : b);
+    const worst = qualified.reduce((a, b) => a.avg > b.avg ? a : b);
+    if (best.iata === worst.iata) return;
+    const diff = worst.avg - best.avg;
+    const pct  = worst.avg > 0 ? Math.round(diff / worst.avg * 100) : 0;
+    if (diff >= 5 && pct >= 20) cityInsights.push({ city, best, worst, diff });
+  });
+  cityInsights.sort((a, b) => b.diff - a.diff).slice(0, 3).forEach(({ city, best, worst }) => {
+    cards.push({ icon: '🏙️', title: `${city}: prefer ${best.iata}`,
+      detail: `${best.iata} ${best.avg} min avg · ${worst.iata} ${worst.avg} min`,
+      color: '#27ae60' });
+  });
+
   return cards;
 }
 
