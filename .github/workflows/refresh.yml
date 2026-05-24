@@ -1,0 +1,48 @@
+name: Refresh flight data
+
+on:
+  schedule:
+    # 4 AM UTC = after midnight in UTC-4 (YYZ/JFK) and well into morning for TLV/DXB
+    # Ensures yesterday is a complete day in all 4 airport timezones
+    - cron: '0 4 * * *'
+  workflow_dispatch:   # allow manual trigger from GitHub UI
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install requests
+
+      - name: Backfill yesterday for all airports
+        env:
+          RAPIDAPI_KEY: ${{ secrets.RAPIDAPI_KEY }}
+        run: |
+          # 2 API calls per airport (2 × 12h chunks), skipped if data already exists
+          python tlv_tracker.py backfill 1 --airport TLV
+          python tlv_tracker.py backfill 1 --airport YYZ
+          python tlv_tracker.py backfill 1 --airport DXB
+          python tlv_tracker.py backfill 1 --airport JFK
+
+      - name: Sync IAA actuals for TLV (free, no API quota)
+        run: python tlv_tracker.py iaa
+
+      - name: Export data.js
+        run: python tlv_tracker.py export
+
+      - name: Commit and push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data.js tlv_flights.db yyz_flights.db dxb_flights.db jfk_flights.db
+          git diff --staged --quiet && echo "No new data" || \
+            git commit -m "Auto-refresh data $(date -u +'%Y-%m-%d')" && git push
