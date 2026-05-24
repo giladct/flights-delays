@@ -579,7 +579,7 @@ function init() {
   Object.keys(raw).forEach(iata => { AIRPORTS_DATA[iata] = normalizeFlights(raw[iata] || []); });
 
   // Build airport switcher
-  currentAirport = Object.keys(AIRPORTS_DATA)[0] || 'TLV';
+  currentAirport = AIRPORTS_DATA['TLV'] ? 'TLV' : (Object.keys(AIRPORTS_DATA)[0] || 'TLV');
   const switcher = document.getElementById('airport-switcher');
   Object.keys(AIRPORTS_DATA).forEach(iata => {
     const btn = document.createElement('button');
