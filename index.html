@@ -382,11 +382,6 @@
       </div>
     </div>
     <button class="btn-clear" onclick="clearFilters()">Clear</button>
-    <div class="filter-legend">
-      <span class="fl-dot fl-green"></span>≤15 min
-      <span class="fl-dot fl-orange"></span>16–45 min
-      <span class="fl-dot fl-red"></span>&gt;45 min
-    </div>
   </div>
 
   <div id="summary-bar"></div>
@@ -402,7 +397,13 @@
         <div class="chart-wrap" id="matrix-wrap"><canvas id="chart-matrix"></canvas></div>
       </div>
       <div class="chart-panel">
-        <h3 id="h3-airline">Top Airlines by Avg Delay</h3>
+        <h3 id="h3-airline" style="display:flex;align-items:center;gap:10px">Top Airlines by Avg Delay
+          <span class="filter-legend" style="font-weight:400;margin-left:4px">
+            <span class="fl-dot fl-green"></span>≤15 min
+            <span class="fl-dot fl-orange"></span>16–45 min
+            <span class="fl-dot fl-red"></span>&gt;45 min
+          </span>
+        </h3>
         <div class="chart-scroll-wrap">
           <div class="chart-scroll-inner" id="airline-chart-inner"><canvas id="chart-airline"></canvas></div>
         </div>
