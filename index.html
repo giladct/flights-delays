@@ -136,6 +136,7 @@
     padding: 8px 20px 10px;
     display: flex; flex-direction: row; flex-wrap: wrap;
     gap: 8px; align-items: stretch;
+    min-height: 70px;
   }
   .insights-panel h3 {
     width: 100%;
@@ -2299,7 +2300,13 @@ function scheduleInsights(data, deep = false) {
   const panel = document.getElementById('insights-panel');
   if (!panel) return;
   const msg = deep ? '🔬 Thinking harder…' : 'Analyzing…';
-  panel.innerHTML = `<h3>Insights</h3><div style="font-size:11px;color:#aaa;padding:6px 0">${msg}</div>`;
+  // Update heading in place — don't wipe existing cards so the panel keeps its height
+  const h3 = panel.querySelector('h3');
+  if (h3) {
+    h3.innerHTML = `Insights <span style="font-size:10px;color:#aaa;font-weight:400;margin-left:4px">${msg}</span>`;
+  } else {
+    panel.innerHTML = `<h3>Insights <span style="font-size:10px;color:#aaa;font-weight:400;margin-left:4px">${msg}</span></h3>`;
+  }
   clearTimeout(_insightsTimer);
   _insightsTimer = setTimeout(() => {
     renderInsightCards(panel, buildInsights(data, deep), deep, buildCoolFact(data));
