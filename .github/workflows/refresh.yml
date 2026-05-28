@@ -34,7 +34,7 @@ jobs:
           python tlv_tracker.py backfill 1 --airport JFK
 
       - name: Sync IAA actuals for TLV (free, no API quota)
-        run: python tlv_tracker.py iaa
+        run: python tlv_tracker.py iaa || echo "IAA unavailable, skipping"
 
       - name: Export data.js
         run: python tlv_tracker.py export
