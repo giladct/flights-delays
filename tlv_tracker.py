@@ -268,8 +268,9 @@ def poll():
 
 # ── Backfill ──────────────────────────────────────────────────────────────────
 
-def backfill(days: int = 7):
-    """Fetch all departures for the past `days` complete days (never today)."""
+def backfill(days: int = 7, force: bool = False):
+    """Fetch all departures for the past `days` complete days (never today).
+    force=True re-fetches chunks that already have data (to pick up actuals)."""
     conn = init_db()
     now_local   = datetime.now(timezone.utc).astimezone(LOCAL_TZ)
     end_local   = now_local.replace(hour=0, minute=0, second=0, microsecond=0)
@@ -281,21 +282,22 @@ def backfill(days: int = 7):
     total_raw = total_new = 0
     chunk_start = start_local
 
-    print(f"Backfilling {days} days: {start_local.strftime('%Y-%m-%d')} -> {end_local.strftime('%Y-%m-%d')}\n")
+    print(f"Backfilling {days} days: {start_local.strftime('%Y-%m-%d')} -> {end_local.strftime('%Y-%m-%d')}"
+          f"{' (force)' if force else ''}\n")
     while chunk_start < end_local:
         chunk_end = min(chunk_start + timedelta(hours=CHUNK_HOURS), end_local)
         label = (f"{chunk_start.strftime('%Y-%m-%d %H:%M')} -> "
                  f"{chunk_end.strftime('%H:%M')}")
-        # Skip chunks that already have data — saves API calls
         existing = conn.execute(
             "SELECT COUNT(*) FROM flights WHERE scheduled_out >= ? AND scheduled_out < ?",
             (chunk_start.strftime('%Y-%m-%d %H:%M'), chunk_end.strftime('%Y-%m-%d %H:%M'))
         ).fetchone()[0]
-        if existing > 0:
+        if existing > 0 and not force:
             print(f"  {label} — {existing} rows already in DB, skipped")
             chunk_start = chunk_end
             continue
-        print(f"  {label} ...", end=" ", flush=True)
+        label_tag = f" (force, {existing} existing)" if force and existing > 0 else ""
+        print(f"  {label}{label_tag} ...", end=" ", flush=True)
         try:
             raw      = fetch_departures(chunk_start, chunk_end)
             new_rows = save_flights(conn, raw, datetime.now(timezone.utc).isoformat())
@@ -504,7 +506,10 @@ def _fetch_arrivals(icao: str, start_local: datetime, end_local: datetime) -> li
                "withCancelled": "false", "withCodeshared": "false", "withCargo": "false"}
     resp = requests.get(url, headers=headers, params=params, timeout=30)
     resp.raise_for_status()
-    return resp.json().get("arrivals", [])
+    try:
+        return resp.json().get("arrivals", [])
+    except Exception:
+        return []
 
 
 def backfill_arrivals(days: int = 7):
@@ -583,6 +588,10 @@ def backfill_arrivals(days: int = 7):
                         time.sleep(wait)
                     else:
                         break
+                except requests.ConnectionError:
+                    wait = 15 * (attempt + 1)
+                    print(f"(connection reset, waiting {wait}s)", end=" ", flush=True)
+                    time.sleep(wait)
 
         updated = 0
         for flight_id, ident, _, scheduled_out in flights:
@@ -719,8 +728,9 @@ if __name__ == "__main__":
         elif cmd == "iaa":
             sync_iaa()
         elif cmd == "backfill":
-            days = int(sys.argv[2]) if len(sys.argv) > 2 else 7
-            backfill(days)
+            days = int(sys.argv[2]) if len(sys.argv) > 2 and sys.argv[2].isdigit() else 7
+            force = "--force" in sys.argv
+            backfill(days, force=force)
         elif cmd == "arrivals":
             days = int(sys.argv[2]) if len(sys.argv) > 2 else 7
             backfill_arrivals(days)
@@ -729,7 +739,7 @@ if __name__ == "__main__":
         sys.exit(0)
 
     print("TLV Tracker — usage:")
-    print("  python tlv_tracker.py backfill [days]  fetch last N days (default 7)")
+    print("  python tlv_tracker.py backfill [days] [--force]  fetch last N days (force re-fetches existing)")
     print("  python tlv_tracker.py iaa              sync actual times from IAA")
     print("  python tlv_tracker.py arrivals [days]  fill missing actuals from destination arrivals")
     print("  python tlv_tracker.py export           generate report.html")
