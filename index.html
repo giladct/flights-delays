@@ -368,7 +368,7 @@
   </div>
 
   <div class="insights-panel" id="insights-panel">
-    <h3 style="display:flex;align-items:center;width:100%">Insights <span id="insights-status"></span><span id="summary-bar"></span></h3>
+    <h3 style="display:flex;align-items:center;width:100%">✨ Cool Facts <span id="insights-status"></span><span id="summary-bar"></span></h3>
     <div id="insights-cards" style="display:contents"></div>
   </div>
 
@@ -2193,12 +2193,13 @@ function buildInsights(data, deep = false) {
 let _insightsTimer = null;
 let _lastInsightsData = null;
 
-function buildCoolFact(flights) {
-  if (!flights || flights.length < 20) return null;
+function buildCoolFacts(flights) {
+  if (!flights || flights.length < 20) return [];
   const withDelay = flights.filter(f => f.delay_minutes != null && f.delay_minutes >= 0);
   const avgOf = arr => arr.length ? Math.round(arr.reduce((s, x) => s + x, 0) / arr.length) : 0;
   const short = s => s.length > 14 ? s.split(' ')[0] : s;
   const fmtH  = h => `${String(h).padStart(2, '0')}:00`;
+  const DAYS  = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
   const candidates = [];
 
   // Total delay hours
@@ -2206,7 +2207,7 @@ function buildCoolFact(flights) {
     const totalH = Math.round(withDelay.reduce((s, f) => s + f.delay_minutes, 0) / 60);
     if (totalH >= 10)
       candidates.push({ icon: '⏱️',
-        text: `${totalH.toLocaleString()} combined hours of delay across ${withDelay.length.toLocaleString()} flights — that's ${Math.round(totalH/24)} full days`,
+        text: `${totalH.toLocaleString()} combined hours of delay across ${withDelay.length.toLocaleString()} flights — that's ${Math.round(totalH/24)} full days lost`,
         score: totalH });
   }
 
@@ -2216,12 +2217,12 @@ function buildCoolFact(flights) {
   const topDest = Object.entries(byDest).sort((a, b) => b[1] - a[1])[0];
   if (topDest && topDest[1] >= 10) {
     const pct = Math.round(topDest[1] / flights.length * 100);
-    candidates.push({ icon: '✈️',
-      text: `${topDest[0]} is the top destination — ${topDest[1].toLocaleString()} flights (${pct}% of all departures)`,
+    candidates.push({ icon: '🗺️',
+      text: `${topDest[0]} is the #1 destination — ${topDest[1].toLocaleString()} flights (${pct}% of all departures in this view)`,
       score: pct });
   }
 
-  // Most punctual airline
+  // Most vs least punctual airline
   const byAl = {};
   withDelay.forEach(f => {
     if (!f.airline_name) return;
@@ -2232,12 +2233,12 @@ function buildCoolFact(flights) {
   const alList = Object.entries(byAl).filter(([,v]) => v.n >= 20)
     .map(([name, v]) => ({ name, pct: Math.round(v.on / v.n * 100), n: v.n }))
     .sort((a, b) => b.pct - a.pct);
-  if (alList.length >= 2 && alList[0].pct >= 65)
+  if (alList.length >= 2 && alList[0].pct >= 60)
     candidates.push({ icon: '🏆',
-      text: `${short(alList[0].name)} departs on time ${alList[0].pct}% of the time — the most punctual airline here`,
+      text: `${short(alList[0].name)} is the most punctual — on time ${alList[0].pct}% of flights (vs ${alList[alList.length-1].pct}% for ${short(alList[alList.length-1].name)})`,
       score: alList[0].pct - 50 });
 
-  // Worst vs best 3-hour window gap
+  // Best vs worst 3-hour departure window
   const byHour = {};
   withDelay.forEach(f => {
     if (!f.scheduled_out) return;
@@ -2253,55 +2254,66 @@ function buildCoolFact(flights) {
     const gap   = Math.round(worst.avg - best.avg);
     if (gap >= 10)
       candidates.push({ icon: '🕐',
-        text: `The ${fmtH(worst.h)} window is ${gap} min worse than ${fmtH(best.h)} on average — when you fly matters`,
+        text: `Flying at ${fmtH(best.h)} saves ~${gap} min vs ${fmtH(worst.h)} on average — timing your departure really matters`,
         score: gap });
   }
 
-  if (!candidates.length) return null;
+  // Longest single delay
+  const maxDelay = withDelay.reduce((best, f) => f.delay_minutes > (best?.delay_minutes || 0) ? f : best, null);
+  if (maxDelay && maxDelay.delay_minutes >= 120) {
+    const dest = maxDelay.dest_name || maxDelay.dest_iata || '?';
+    const al   = short(maxDelay.airline_name || maxDelay.airline_iata || '?');
+    const h = Math.floor(maxDelay.delay_minutes / 60), m = maxDelay.delay_minutes % 60;
+    candidates.push({ icon: '😱',
+      text: `Longest delay on record: ${h}h ${m > 0 ? m + 'm ' : ''}— ${al} to ${dest} on ${(maxDelay.scheduled_out||'').slice(0,10)}`,
+      score: maxDelay.delay_minutes / 10 });
+  }
+
+  // Worst vs best day of week
+  const byDay = {};
+  withDelay.forEach(f => {
+    if (!f.scheduled_out) return;
+    const [y, mo, d] = f.scheduled_out.slice(0, 10).split('-').map(Number);
+    const dow = (new Date(y, mo - 1, d).getDay() + 6) % 7;
+    if (!byDay[dow]) byDay[dow] = [];
+    byDay[dow].push(f.delay_minutes);
+  });
+  const dayList = Object.entries(byDay).filter(([,d]) => d.length >= 10)
+    .map(([dow, d]) => ({ dow: parseInt(dow), avg: avgOf(d) }));
+  if (dayList.length >= 4) {
+    const worst = dayList.reduce((a, b) => a.avg > b.avg ? a : b);
+    const best  = dayList.reduce((a, b) => a.avg < b.avg ? a : b);
+    const gap   = worst.avg - best.avg;
+    if (gap >= 5)
+      candidates.push({ icon: '📅',
+        text: `${DAYS[worst.dow]} is the most delayed day (${worst.avg} min avg) — ${gap} min worse than ${DAYS[best.dow]} (${best.avg} min)`,
+        score: gap * 2 });
+  }
+
   candidates.sort((a, b) => b.score - a.score);
-  // Rotate daily among top 3 so it feels fresh each visit
-  return candidates[Math.floor(Date.now() / 86400000) % Math.min(3, candidates.length)];
+  return candidates.slice(0, 3);
 }
 
-function renderInsightCards(panel, cards, deep, coolFact) {
-  // Update just the status span — never touch the h3 wrapper itself
+function renderInsightCards(panel, _cards, _deep, coolFacts) {
   const statusEl = document.getElementById('insights-status');
-  if (statusEl) statusEl.innerHTML = deep
-    ? `<span style="font-size:10px;color:#8e44ad;font-weight:600;margin-left:4px">● Deep</span>`
-    : `<button onclick="scheduleInsights(_lastInsightsData,true)" style="
-        margin-left:6px;padding:1px 7px;font-size:10px;cursor:pointer;
-        border:1px solid #3b7dd8;border-radius:3px;background:#e8f0fe;
-        color:#3b7dd8;font-weight:600;vertical-align:middle">🔍 Think Harder</button>`;
-  // Update only the cards container — h3 stays untouched
+  if (statusEl) statusEl.innerHTML = '';
   const cardsEl = document.getElementById('insights-cards') || panel;
-  const factHtml = coolFact ? `<div class="cool-fact-card">
-    <div class="cfc-icon">${coolFact.icon}</div>
-    <div><div class="cfc-label">✨ Cool Fact</div><div class="cfc-text">${coolFact.text}</div></div>
-  </div>` : '';
-  const cardsHtml = cards.length
-    ? cards.map(c => `<div class="insight-card" style="border-left-color:${c.color}">
-        <div class="ic-icon">${c.icon}</div>
-        <div><div class="ic-title">${c.title}</div><div class="ic-detail">${c.detail}</div></div>
+  cardsEl.innerHTML = coolFacts && coolFacts.length
+    ? coolFacts.map(f => `<div class="cool-fact-card">
+        <div class="cfc-icon">${f.icon}</div>
+        <div><div class="cfc-label">✨ Cool Fact</div><div class="cfc-text">${f.text}</div></div>
       </div>`).join('')
     : '<div style="font-size:11px;color:#aaa">Not enough data</div>';
-  cardsEl.innerHTML = factHtml + cardsHtml;
 }
 
-function scheduleInsights(data, deep = false) {
+function scheduleInsights(data) {
   _lastInsightsData = data;
   const panel = document.getElementById('insights-panel');
   if (!panel) return;
-  const msg = deep ? '🔬 Thinking harder…' : 'Analyzing…';
-  // Use a disabled button so the element stays the same size as the active button
-  const statusEl = document.getElementById('insights-status');
-  if (statusEl) statusEl.innerHTML =
-    `<button disabled style="margin-left:6px;padding:1px 7px;font-size:10px;cursor:default;
-      border:1px solid #2a2a2a;border-radius:3px;background:#1a1a1a;
-      color:#555;font-weight:600;vertical-align:middle">${msg}</button>`;
   clearTimeout(_insightsTimer);
   _insightsTimer = setTimeout(() => {
-    renderInsightCards(panel, buildInsights(data, deep), deep, buildCoolFact(data));
-  }, deep ? 3000 : 1000);
+    renderInsightCards(panel, null, false, buildCoolFacts(data));
+  }, 500);
 }
 
 // ── Table ─────────────────────────────────────────────────────────────────────
