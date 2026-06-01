@@ -47,15 +47,15 @@
 
   /* ── Filters bar ── */
   .filters {
-    background: #151515; border-top: 2px solid #2a2a2a;
+    background: #1d1d1d;
     padding: 12px 20px;
     display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap;
     margin: 10px 10px 0;
-    border-radius: 4px 4px 0 0;
+    border-radius: 8px;
   }
   .filter-group { display: flex; flex-direction: column; gap: 3px; }
   .filter-group label {
-    font-size: 11px; font-weight: 600; color: #555;
+    font-size: 11px; font-weight: 600; color: #888;
     text-transform: uppercase; letter-spacing: .4px;
   }
   .filter-group select,
@@ -118,13 +118,13 @@
 
   /* ── Insights KPI row ── */
   .insights-panel {
-    background: #151515;
-    border-top: 2px solid #2a2a2a;
+    background: #1d1d1d;
     padding: 10px 20px 12px;
     display: flex; flex-direction: row; flex-wrap: wrap;
     gap: 10px; align-items: stretch;
     min-height: 70px;
     margin: 10px 10px 0;
+    border-radius: 8px;
   }
   .insights-panel h3 {
     width: 100%;
@@ -152,12 +152,13 @@
 
   /* ── Trend chart ── */
   .trend-section {
-    background: #151515; border-top: 2px solid #2a2a2a;
+    background: #1d1d1d;
     padding: 12px 20px 10px; height: 200px; flex-shrink: 0;
     display: flex; flex-direction: column;
     margin: 10px 10px 0;
+    border-radius: 8px;
   }
-  .trend-section h3 { font-size: 12px; font-weight: 700; color: #999; margin-bottom: 6px; flex-shrink: 0; }
+  .trend-section h3 { font-size: 14px; font-weight: 700; color: #ddd; margin-bottom: 6px; flex-shrink: 0; }
   .trend-section .chart-wrap { flex: 1; min-height: 0; position: relative; }
 
   /* ── Charts ── */
@@ -171,14 +172,14 @@
   .chart-panel {
     flex: 1;
     padding: 12px 14px 8px;
-    background: #151515;
-    border-top: 2px solid #2a2a2a;
+    background: #1d1d1d;
+    border-radius: 8px;
     display: flex; flex-direction: column;
     min-width: 0; overflow: hidden;
   }
   .chart-panel:last-child { border-right: none; }
   .chart-panel h3 {
-    font-size: 12px; font-weight: 700; color: #999;
+    font-size: 14px; font-weight: 700; color: #ddd;
     margin-bottom: 8px; flex-shrink: 0;
   }
   .chart-panel .chart-wrap { flex: 1; min-height: 0; position: relative; }
@@ -187,12 +188,14 @@
 
   /* ── Map section ── */
   .map-section {
-    background: #151515; border-top: 2px solid #2a2a2a;
+    background: #1d1d1d;
     padding: 12px 16px 0; height: 430px; flex-shrink: 0;
     display: flex; flex-direction: column;
     margin: 10px 10px 0;
+    border-radius: 8px;
+    overflow: hidden;
   }
-  .map-section h3 { font-size: 12px; font-weight: 700; color: #999; margin-bottom: 4px; flex-shrink: 0; }
+  .map-section h3 { font-size: 14px; font-weight: 700; color: #ddd; margin-bottom: 4px; flex-shrink: 0; }
   .map-top-header { display: flex; align-items: center; gap: 8px; flex-shrink: 0; margin-bottom: 4px; }
   .map-top-header h3 { margin-bottom: 0; }
   .map-body { display: flex; flex: 1; min-height: 0; }
@@ -248,9 +251,9 @@
   .toolbar {
     padding: 8px 20px;
     display: flex; align-items: center; justify-content: space-between;
-    background: #151515;
-    border-top: 2px solid #2a2a2a;
+    background: #1d1d1d;
     margin: 10px 10px 0;
+    border-radius: 8px;
   }
   .results-count { font-size: 12px; color: #555; }
   .results-count strong { color: #4a9eff; }
@@ -302,6 +305,26 @@
   .status-tag {
     font-size: 10px; color: #666; background: #1e1e1e;
     padding: 1px 5px; border-radius: 3px;
+  }
+
+  /* ── Info icon & tooltip ── */
+  .info-icon {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 14px; height: 14px; border-radius: 50%;
+    background: #1a2a3a; color: #3b7dd8;
+    font-size: 9px; font-weight: 700; font-style: normal;
+    cursor: default; margin-left: 6px; flex-shrink: 0;
+    vertical-align: middle; user-select: none;
+    transition: background .12s, color .12s;
+  }
+  .info-icon:hover { background: #1a2a3a; color: #3b7dd8; }
+  #info-tooltip {
+    position: fixed; z-index: 9999; pointer-events: none; display: none;
+    width: 230px; padding: 8px 10px;
+    background: #1c1c1c; color: #bbb;
+    font-size: 11px; font-weight: 400; line-height: 1.55;
+    border: 1px solid #2a2a2a; border-radius: 5px;
+    box-shadow: 0 4px 14px rgba(0,0,0,.65);
   }
 
   /* ── Warning / empty ── */
@@ -373,11 +396,11 @@
 
   <div class="charts-row">
       <div class="chart-panel">
-        <h3 id="h3-matrix">Avg Gate Delay — Weekday × Hour</h3>
+        <h3 id="h3-matrix" style="display:flex;align-items:center"><span class="h3-text">Avg Gate Delay — Weekday × Hour</span><i class="info-icon" data-tip="Heat map of delay by day of week (rows) and scheduled departure hour (columns). Darker = more delay. Click any cell to filter the table to that day + hour.">i</i></h3>
         <div class="chart-wrap" id="matrix-wrap"><canvas id="chart-matrix"></canvas></div>
       </div>
       <div class="chart-panel">
-        <h3 id="h3-airline" style="display:flex;align-items:center;gap:10px">Top Airlines by Avg Delay
+        <h3 id="h3-airline" style="display:flex;align-items:center;gap:10px"><span class="h3-text">Top Airlines by Avg Delay</span><i class="info-icon" data-tip="Airlines ranked by gate delay. Bar color reflects severity: green ≤15 min, orange 16–45 min, red >45 min. Click a bar to filter the table to that airline.">i</i>
           <span class="filter-legend" style="font-weight:400;margin-left:4px">
             <span class="fl-dot fl-green"></span>≤15 min
             <span class="fl-dot fl-orange"></span>16–45 min
@@ -389,7 +412,7 @@
         </div>
       </div>
       <div class="chart-panel">
-        <h3 id="h3-dest">Top Destinations by Avg Delay</h3>
+        <h3 id="h3-dest" style="display:flex;align-items:center"><span class="h3-text">Top Destinations by Avg Delay</span><i class="info-icon" data-tip="Destination cities ranked by gate delay. Cities with multiple airports are grouped; click a city to expand. Click a bar to filter the table to that destination.">i</i></h3>
         <div class="chart-scroll-wrap">
           <div class="chart-scroll-inner" id="dest-chart-inner"><canvas id="chart-dest"></canvas></div>
         </div>
@@ -398,7 +421,7 @@
 
   <div class="map-section">
     <div class="map-top-header">
-      <h3>Departure Routes from TLV</h3>
+      <h3 style="display:flex;align-items:center">Departure Routes from TLV<i class="info-icon" data-tip="Route map showing all departures. Line color reflects average delay to that destination: green ≤15 min, orange 16–45 min, red >45 min. Hover a line for details; use the region buttons to zoom.">i</i></h3>
       <span class="map-legend">
         <span class="leg-green">≤15 min</span>
         <span class="leg-orange">16–45 min</span>
@@ -417,7 +440,7 @@
   </div>
 
   <div class="trend-section">
-    <h3 id="h3-trend">Avg Delay by Date</h3>
+    <h3 id="h3-trend" style="display:flex;align-items:center"><span class="h3-text">Avg Delay by Date</span><i class="info-icon" data-tip="Daily trend of average gate delay over the selected date range. Each point is one calendar day. Hover for the exact date and value.">i</i></h3>
     <div class="chart-wrap"><canvas id="chart-trend"></canvas></div>
   </div>
 
@@ -698,11 +721,8 @@ function applyFilters() {
 }
 
 function setDefaultDateRange() {
-  const today = new Date();
-  const year  = today.getFullYear();
-  const month = String(today.getMonth() + 1).padStart(2, '0');
-  document.getElementById('f-date-lo').value = `${year}-${month}-01`;
-  document.getElementById('f-date-hi').value = today.toISOString().slice(0, 10);
+  document.getElementById('f-date-lo').value = '2026-05-01';
+  document.getElementById('f-date-hi').value = '2026-05-31';
 }
 
 function clearFilters() {
@@ -777,10 +797,10 @@ function setMetric(m) {
   document.getElementById('btn-median').classList.toggle('active', m === 'median');
   document.getElementById('btn-count').classList.toggle('active',  m === 'count');
   const lbl = m === 'count' ? 'No. of Flights' : m === 'median' ? 'Median Delay' : 'Avg Delay';
-  document.getElementById('h3-matrix').textContent  = `${lbl} — Weekday × Hour`;
-  document.getElementById('h3-airline').textContent = `Airlines by ${lbl}`;
-  document.getElementById('h3-dest').textContent    = `Destinations by ${lbl}`;
-  document.getElementById('h3-trend').textContent   = `${lbl} by Date`;
+  document.querySelector('#h3-matrix .h3-text').textContent  = `${lbl} — Weekday × Hour`;
+  document.querySelector('#h3-airline .h3-text').textContent = `Airlines by ${lbl}`;
+  document.querySelector('#h3-dest .h3-text').textContent    = `Destinations by ${lbl}`;
+  document.querySelector('#h3-trend .h3-text').textContent   = `${lbl} by Date`;
   applyFilters();
 }
 
@@ -1129,7 +1149,7 @@ function updateTrendChart(data) {
 
 function buildCharts(data) {
   // Dark theme defaults for all Chart.js instances
-  Chart.defaults.color = '#606060';
+  Chart.defaults.color = '#aaa';
   Chart.defaults.borderColor = '#242424';
   initMatrix();
   buildTrendChart(data);
@@ -1169,7 +1189,7 @@ function buildCharts(data) {
       scales: {
         x: { beginAtZero: true, max: chartMetric !== 'count' ? 60 : undefined,
              ticks: { display: false }, title: { display: false }, grid: { display: false }, border: { display: false } },
-        y: { ticks: { font: { size: 10 }, crossAlign: 'far' }, grid: { display: false } }
+        y: { ticks: { font: { size: 12 }, color: '#ccc', crossAlign: 'far' }, grid: { display: false } }
       },
       onHover: (e, els, chart) => {
         hoveredAirlineIdx = findBarIndex(e, els, chart);
@@ -1220,7 +1240,7 @@ function buildCharts(data) {
       scales: {
         x: { beginAtZero: true, max: chartMetric !== 'count' ? 60 : undefined,
              ticks: { display: false }, title: { display: false }, grid: { display: false }, border: { display: false } },
-        y: { ticks: { font: { size: 10 }, crossAlign: 'far' }, grid: { display: false } }
+        y: { ticks: { font: { size: 12 }, color: '#ccc', crossAlign: 'far' }, grid: { display: false } }
       },
       onHover: (e, els, chart) => {
         hoveredDestIdx = findBarIndex(e, els, chart);
@@ -2229,7 +2249,7 @@ function buildCoolFacts(flights) {
     byAl[f.airline_name].n++;
     if (f.delay_minutes <= 15) byAl[f.airline_name].on++;
   });
-  const alList = Object.entries(byAl).filter(([,v]) => v.n >= 20)
+  const alList = Object.entries(byAl).filter(([name, v]) => v.n >= 20 && !name.toLowerCase().includes('unknown') && !name.toLowerCase().includes('private'))
     .map(([name, v]) => ({ name, pct: Math.round(v.on / v.n * 100), n: v.n }))
     .sort((a, b) => b.pct - a.pct);
   if (alList.length >= 2 && alList[0].pct >= 60)
@@ -2258,7 +2278,10 @@ function buildCoolFacts(flights) {
   }
 
   // Longest single delay
-  const maxDelay = withDelay.reduce((best, f) => f.delay_minutes > (best?.delay_minutes || 0) ? f : best, null);
+  const maxDelay = withDelay.filter(f => {
+    const n = (f.airline_name || '').toLowerCase();
+    return !n.includes('unknown') && !n.includes('private');
+  }).reduce((best, f) => f.delay_minutes > (best?.delay_minutes || 0) ? f : best, null);
   if (maxDelay && maxDelay.delay_minutes >= 120) {
     const dest = maxDelay.dest_name || maxDelay.dest_iata || '?';
     const al   = short(maxDelay.airline_name || maxDelay.airline_iata || '?');
@@ -2372,6 +2395,32 @@ function exportCsv() {
 }
 
 init();
+
+// ── Info icon tooltips ────────────────────────────────────────────────────────
+(function () {
+  const tip = document.createElement('div');
+  tip.id = 'info-tooltip';
+  document.body.appendChild(tip);
+
+  function move(e) {
+    let x = e.clientX + 14, y = e.clientY + 14;
+    const tw = tip.offsetWidth, th = tip.offsetHeight;
+    if (x + tw > window.innerWidth  - 8) x = e.clientX - tw - 10;
+    if (y + th > window.innerHeight - 8) y = e.clientY - th - 10;
+    tip.style.left = x + 'px';
+    tip.style.top  = y + 'px';
+  }
+
+  document.querySelectorAll('.info-icon').forEach(el => {
+    el.addEventListener('mouseenter', e => {
+      tip.textContent = el.dataset.tip;
+      tip.style.display = 'block';
+      move(e);
+    });
+    el.addEventListener('mousemove', move);
+    el.addEventListener('mouseleave', () => { tip.style.display = 'none'; });
+  });
+})();
 </script>
 </body>
 </html>
